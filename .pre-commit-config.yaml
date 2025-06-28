@@ -1,12 +1,4 @@
 repos:
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system  # Use the system or virtualenv Python environment
-        types: [python]
-        args: [--rcfile=.pylintrc]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
     hooks:
@@ -15,3 +7,13 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-toml
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: python  # Use the system or virtualenv Python environment
+        types: [python]
+        args: [--rcfile=.pylintrc]
+        additional_dependencies:
+          - pylint==3.3.7
