@@ -7,13 +7,13 @@ assignees: ''
 
 ---
 
-**Select your user role** 
+**Select your user role**
 As a DM/Player/etc
 
-**What do you want?** 
+**What do you want?**
 I want ...
 
-**Why do you need it?** 
+**Why do you need it?**
 so that ...
 
 **Additional context**
