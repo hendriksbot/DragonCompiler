@@ -1,0 +1,16 @@
+[project]
+name = "dragon-compiler"
+version = "0.1.0"
+description = "A CLI tool that compiles DnD json data into a SQLITE database"
+readme = "README.md"
+license = { text = "MIT" }
+
+[project.optional-dependencies]
+dev = [
+    "pylint==3.3.7",
+    "pre-commit>=4.0.0,<5.0.0"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
