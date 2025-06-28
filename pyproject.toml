@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "A CLI tool that compiles DnD json data into a SQLITE database"
 readme = "README.md"
 license = { text = "MIT" }
+dependencies = [
+    "typer==0.16.0"
+]
 
 [project.optional-dependencies]
 dev = [
