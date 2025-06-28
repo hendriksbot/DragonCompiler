@@ -1,0 +1,7 @@
+{
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "editor.renderWhitespace": "trailing",
+    "editor.rulers": [80],
+    "html.validate.scripts": false,
+}
