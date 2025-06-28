@@ -12,10 +12,12 @@ class CompilerCLI:
 
     def build(
         self,
-        source: str,
-        out: str = "./build",
+        source: str = typer.Option(...,"--source", "-s"),
+        out: str = typer.Option("./build","--out", "-o")
     ):
-        pass
+        print("ready to build")
+        print("source: " + source)
+        print("out: " + out)
 
 
 # Entry Point
