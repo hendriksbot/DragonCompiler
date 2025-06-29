@@ -22,6 +22,6 @@ repos:
         entry: python -m unittest discover
         language: system
         types: [python]
-        args: ["-s", "tests", "-p", "\"test_*.py\""]
+        args: ["-s", "tests", "-p", "\"test_*.py\"", "--verbose"]
         pass_filenames: false
         stages: [pre-push,manual]
