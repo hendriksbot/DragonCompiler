@@ -14,7 +14,7 @@ dev = [
     "pre-commit>=4.0.0,<5.0.0"
 ]
 [project.scripts]
-dragon = "dragon_compiler.dragon_cli:main"
+dragon = "dragon_compiler.cli:main"
 
 [build-system]
 requires = ["setuptools", "wheel"]
