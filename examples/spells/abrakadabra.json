@@ -1,0 +1,51 @@
+{
+    "name": "Abrakadabra",
+    "meta": {
+        "dnd_edition": "5e",
+        "source": {
+            "homebrew": true,
+            "book": "Fantastic",
+            "page": 242
+        },
+        "language": "ger"
+    },
+    "level": 0,
+    "school_of_magic": "necromancy",
+    "casting_classes": ["warlock", "sorcerer", "wizard"],
+    "casting_time": {
+        "unit": "action",
+        "value": 1,
+        "ritual": false
+    },
+    "range": {
+        "type": "point",
+        "distance": 36,
+        "unit": "meter"
+    },
+    "components": {
+        "verbal": true,
+        "somatic": true,
+        "materials": ""
+    },
+    "duration": {
+        "unit": "round",
+        "value": 1,
+        "requires_concentration": false
+    },
+    "description": {
+        "text": "Du täuscht deine Gegner mit einem unsinnigen Zauberspruch",
+        "at_higher_levels": "Der Schaden dieses Zaubers steigt jeweils um 1W4 bei Erreichen der 5./11./17. Stufe"
+    },
+    "effects": {
+        "attack_type": "ranged_spell_attack",
+        "damage": {
+            "base_dice": "1d4",
+            "type": "fire",
+            "character_scaling": {
+                "5": "2d4",
+                "11": "3d4",
+                "17": "4d4"
+            }
+        }
+    }
+}
