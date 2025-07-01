@@ -22,11 +22,9 @@ This repository compiles Dungeons & Dragons data from individual json files into
 5. Intstall pre-commit
     ```
     pre-commit install
-    pre-commit install --hook-type pre-push
     ```
 
 6. Test pre-commit
     ```
-    pre-commit run --all-files --hook-stage commit
-    pre-commit run --all-files --hook-stage pre-push
+    pre-commit run --all-files
     ```
