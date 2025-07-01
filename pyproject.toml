@@ -5,14 +5,14 @@ description = "A CLI tool that compiles DnD json data into a SQLITE database"
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
-    "typer==0.16.",
-    "sqlite3==3.13.5"
+    "typer==0.16.0"
 ]
 
 [project.optional-dependencies]
 dev = [
     "pylint==3.3.7",
-    "pre-commit>=4.0.0,<5.0.0"
+    "pre-commit>=4.0.0,<5.0.0",
+    "build>=1.2.2"
 ]
 [project.scripts]
 dragon = "dragon_compiler.cli:main"

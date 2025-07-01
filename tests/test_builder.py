@@ -32,6 +32,9 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
+class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
+    """test build functionality"""
+
     @patch("dragon_compiler.builder.sqlite3.connect")
     def test_build_calls_db_methods(self, mock_connect):
         # Create a mock connection and cursor
@@ -51,9 +54,9 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
 
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
-            call("CREATE TABLE spells (name TEXT)"),
-            call("INSERT INTO spells VALUES(?)", (
-                "Magic Missile"
+            call("CREATE TABLE spells (name TEXT, level INTEGER)"),
+            call("INSERT INTO spells VALUES(?, ?)", (
+                "Magic Missile", 1
             ))
         ]
         )
