@@ -49,7 +49,16 @@ class CompilerCLI:
         db_builder.build()
 
     def release(self, source: str):
-        pass
+        out = "release"
+        print("ready to release")
+        print("source: " + source)
+        print("out: " + out)
+        db_builder= builder.Builder()
+        db_builder.set_config(builder.BuilderConfig(
+            Path(source), Path(out), "spells.sqlite"
+        ))
+        db_builder.build()
+        db_builder.package_release()
 
 # Entry Point
 def main():
