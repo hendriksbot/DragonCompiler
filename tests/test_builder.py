@@ -1,9 +1,10 @@
 """Tests for dragon builder"""
 import unittest
-from unittest.mock import patch, call, MagicMock
+from unittest.mock import patch, call, MagicMock, mock_open, ANY
 import json
 import os
 import tempfile
+from importlib.metadata import version
 from pathlib import Path
 from dragon_compiler import builder  # your actual import
 
@@ -40,23 +41,26 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         # Create a mock connection and cursor
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
+        mock_out_path = MagicMock()
+        mock_out_path.return_value = "build"
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
         test_builder = builder.Builder()
         test_builder.set_config(builder.BuilderConfig(
             Path(self.temp_dir.name),
-            Path(":memory:"),
+            mock_out_path,
             "spells.sqlite"
             ))
 
         test_builder.build()
 
+        mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
-            call("CREATE TABLE spells (name TEXT, level INTEGER)"),
-            call("INSERT INTO spells VALUES(?, ?)", (
-                "Magic Missile", 1
+            call("CREATE TABLE spells (id INTEGER, name TEXT, level INTEGER)"),
+            call("INSERT INTO spells VALUES(?, ?, ?)", (
+                0, "Magic Missile", 1
             ))
         ]
         )
@@ -64,3 +68,30 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         # Assert commit and close are called
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
+
+class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
+    """test release functionality"""
+
+    @patch("json.dump")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_release(self, mock_file, mock_dump):
+        exp_manifest = {
+            "compiler_version": version("dragon_compiler"),
+            #"data_version": "0.42.21",
+            #"build_time": ""
+        }
+
+        test_builder = builder.Builder()
+        out_path = Path("release")
+        test_builder.set_config(builder.BuilderConfig(
+            Path(self.temp_dir.name),
+            out_path,
+            "spells.sqlite"
+            ))
+
+        test_builder.package_release()
+
+        mock_file.assert_called_once_with(out_path / "manifest.json",
+                                           "w", encoding="utf-8")
+
+        mock_dump.assert_called_once_with(exp_manifest, ANY, indent=2)
