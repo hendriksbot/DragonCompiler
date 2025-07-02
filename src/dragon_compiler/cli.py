@@ -1,5 +1,6 @@
 """This module implements the command line interface of the dragon compiler"""
 import typer
+import logging
 from pathlib import Path
 from dragon_compiler import builder
 
@@ -10,6 +11,9 @@ class CompilerCLI:
             "for your spells and monster database")
         self._app.command("build")(self._make_build_command())
         self._app.command("release")(self._make_release_command())
+        logging.basicConfig(
+            level=logging.INFO,
+            format="[%(levelname)s] %(message)s")
 
     def run(self):
         self._app()
@@ -38,11 +42,11 @@ class CompilerCLI:
             return self.release(source)
         return release_command
 
+    def _create_builder(self) -> builder.Builder:
+        return builder.Builder(logger = logging.getLogger("dragon"))
+
     def build(self, source: str, out: str, do_clean: bool): #pylint: disable=unused-argument
-        print("ready to build")
-        print("source: " + source)
-        print("out: " + out)
-        db_builder= builder.Builder()
+        db_builder= self._create_builder()
         db_builder.set_config(builder.BuilderConfig(
             Path(source), Path(out), "spells.sqlite"
         ))
@@ -53,10 +57,7 @@ class CompilerCLI:
 
     def release(self, source: str):
         out = "release"
-        print("ready to release")
-        print("source: " + source)
-        print("out: " + out)
-        db_builder= builder.Builder()
+        db_builder= self._create_builder()
         db_builder.set_config(builder.BuilderConfig(
             Path(source), Path(out), "spells.sqlite"
         ))

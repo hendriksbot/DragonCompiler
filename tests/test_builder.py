@@ -30,6 +30,8 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
         with open(self.spell_json_path, "w", encoding="utf-8") as f:
             json.dump(self.spell_data, f)
 
+        self.fake_logger = MagicMock()
+
     def tearDown(self):
         self.temp_dir.cleanup()
 
@@ -46,7 +48,7 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        test_builder = builder.Builder()
+        test_builder = builder.Builder(logger=self.fake_logger)
         test_builder.set_config(builder.BuilderConfig(
             Path(self.temp_dir.name),
             mock_out_path,
@@ -81,7 +83,7 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
             #"build_time": ""
         }
 
-        test_builder = builder.Builder()
+        test_builder = builder.Builder(logger=self.fake_logger)
         out_path = Path("release")
         test_builder.set_config(builder.BuilderConfig(
             Path(self.temp_dir.name),
