@@ -28,3 +28,22 @@ This repository compiles Dungeons & Dragons data from individual json files into
     ```
     pre-commit run --all-files
     ```
+
+## Compile a database
+
+- For testing purpose, you could run just the build command. For help and more
+details, run the following command
+    ```
+    dragon build --help
+    ```
+- For releasing a proper new database with, it is recommended to use the
+release command. This will create a release folder
+
+    - help:
+        ```
+        dragon release --help
+        ```
+    - release example:
+        ```
+        dragon release --source <spells_folder>
+        ```
