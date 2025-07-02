@@ -1,0 +1,13 @@
+{
+    "database_info": {
+        "name": "compiler test data",
+        "version": "0.1.0"
+    },
+    "datasets": [
+        {
+            "name": "spells",
+            "source": "spells"
+        }
+    ]
+
+}

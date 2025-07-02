@@ -52,7 +52,7 @@ class CompilerCLI:
 
         source_path = Path(source)
         db_builder.set_config(builder.BuilderConfig(
-            source_path, Path(out), "spells.sqlite"
+            source_path, Path(out), "spells"
         ))
         if do_clean:
             db_builder.clean_up_out_folder()
@@ -66,7 +66,7 @@ class CompilerCLI:
         source_path = Path(source)
         manifest = self.load_db_manifest(source_path)
         db_builder.set_config(builder.BuilderConfig(
-            source_path, Path(out), "spells.sqlite", db_manifest=manifest
+            source_path, Path(out), None, db_manifest=manifest
         ))
         db_builder.clean_up_out_folder()
         db_builder.build()
