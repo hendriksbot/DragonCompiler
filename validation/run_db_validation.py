@@ -1,11 +1,15 @@
 """this script support a fast analysis and validation of the test db"""
 import sys
 import sqlite3
+import typer
 from pathlib import Path
 
+app = typer.Typer()
 
-def main():
-    db_path = Path("build/spells.sqlite")
+@app.command()
+def main(path_to_db: str =
+          typer.Option(...,"--source", "-s", help="path to database")):
+    db_path = Path(path_to_db)
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
 
@@ -44,4 +48,4 @@ def print_rows_of_db(cursor: sqlite3.Cursor):
 
 
 if __name__ == "__main__":
-    main()
+    app()
