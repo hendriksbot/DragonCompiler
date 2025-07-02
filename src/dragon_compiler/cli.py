@@ -1,6 +1,8 @@
 """This module implements the command line interface of the dragon compiler"""
 import typer
 import logging
+import json
+import sys
 from pathlib import Path
 from dragon_compiler import builder
 
@@ -42,13 +44,15 @@ class CompilerCLI:
             return self.release(source)
         return release_command
 
-    def _create_builder(self) -> builder.Builder:
-        return builder.Builder(logger = logging.getLogger("dragon"))
+    def _create_builder(self, logger) -> builder.Builder:
+        return builder.Builder(logger = logger)
 
     def build(self, source: str, out: str, do_clean: bool): #pylint: disable=unused-argument
-        db_builder= self._create_builder()
+        db_builder= self._create_builder(logging.getLogger("dragon"))
+
+        source_path = Path(source)
         db_builder.set_config(builder.BuilderConfig(
-            Path(source), Path(out), "spells.sqlite"
+            source_path, Path(out), "spells.sqlite"
         ))
         if do_clean:
             db_builder.clean_up_out_folder()
@@ -57,13 +61,35 @@ class CompilerCLI:
 
     def release(self, source: str):
         out = "release"
-        db_builder= self._create_builder()
+        self.logger = logging.getLogger("dragon")
+        db_builder= self._create_builder(self.logger)
+        source_path = Path(source)
+        manifest = self.load_db_manifest(source_path)
         db_builder.set_config(builder.BuilderConfig(
-            Path(source), Path(out), "spells.sqlite"
+            source_path, Path(out), "spells.sqlite", db_manifest=manifest
         ))
         db_builder.clean_up_out_folder()
         db_builder.build()
         db_builder.package_release()
+
+    def load_db_manifest(self, source_path: Path) -> dict:
+        self.logger.info("load database manifest")
+        manifest_path = source_path / "manifest.json"
+        try:
+            with manifest_path.open("r", encoding="utf-8") \
+                as f:
+                manifest = json.load(f)
+                if not manifest:
+                    raise json.JSONDecodeError(msg="Empty JSON", doc="" ,pos=0)
+                return manifest
+        except FileNotFoundError:
+            self.logger.error("database manifest not found in source directory")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            self.logger.error("database manifest in source directory " \
+                                "is invalid")
+            self.logger.error("%s", str(e))
+            sys.exit(1)
 
 # Entry Point
 def main():
