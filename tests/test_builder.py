@@ -39,7 +39,7 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
     """test build functionality"""
 
     @patch("dragon_compiler.builder.sqlite3.connect")
-    def test_build_calls_db_methods(self, mock_connect):
+    def test_build_without_db_manifest(self, mock_connect):
         # Create a mock connection and cursor
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -52,7 +52,49 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         test_builder.set_config(builder.BuilderConfig(
             Path(self.temp_dir.name),
             mock_out_path,
-            "spells.sqlite"
+            "spells"
+            ))
+
+        test_builder.build()
+
+        mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        mock_connect.assert_called_once()
+        mock_cursor.execute.assert_has_calls([
+            call("CREATE TABLE spells (id INTEGER, name TEXT, level INTEGER)"),
+            call("INSERT INTO spells VALUES(?, ?, ?)", (
+                0, "Magic Missile", 1
+            ))
+        ]
+        )
+
+        # Assert commit and close are called
+        mock_conn.commit.assert_called_once()
+        mock_conn.close.assert_called_once()
+
+    @patch("dragon_compiler.builder.sqlite3.connect")
+    def test_build_with_db_manifest(self, mock_connect):
+        # Create a mock connection and cursor
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_out_path = MagicMock()
+        mock_out_path.return_value = Path("build")
+        mock_connect.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+
+        db_manifest = {
+            "datasets":[
+                {
+                    "name": "spells",
+                    "source": ""
+                }
+            ]
+        }
+
+        test_builder = builder.Builder(logger=self.fake_logger)
+        test_builder.set_config(builder.BuilderConfig(
+            Path(self.temp_dir.name),
+            mock_out_path,
+            None, db_manifest=db_manifest
             ))
 
         test_builder.build()
@@ -77,9 +119,26 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
     @patch("json.dump")
     @patch("builtins.open", new_callable=mock_open)
     def test_release(self, mock_file, mock_dump):
+        db_manifest = {
+            "database_info": {
+                "version": "1.2.3",
+                "name": "awesome data"
+            },
+            "datasets":[
+                {
+                    "name": "spells",
+                    "source": "db/spells"
+                }
+            ]
+        }
         exp_manifest = {
-            "compiler_version": version("dragon_compiler"),
-            #"data_version": "0.42.21",
+            "compiler_info":{
+                "version": version("dragon_compiler")
+            },
+            "database_info": {
+                "version": "1.2.3",
+                "name": "awesome data"
+            }
             #"build_time": ""
         }
 
@@ -88,7 +147,8 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
         test_builder.set_config(builder.BuilderConfig(
             Path(self.temp_dir.name),
             out_path,
-            "spells.sqlite"
+            None,
+            db_manifest=db_manifest
             ))
 
         test_builder.package_release()
