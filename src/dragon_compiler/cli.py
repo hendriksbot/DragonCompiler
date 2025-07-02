@@ -46,6 +46,9 @@ class CompilerCLI:
         db_builder.set_config(builder.BuilderConfig(
             Path(source), Path(out), "spells.sqlite"
         ))
+        if do_clean:
+            db_builder.clean_up_out_folder()
+
         db_builder.build()
 
     def release(self, source: str):
@@ -57,6 +60,7 @@ class CompilerCLI:
         db_builder.set_config(builder.BuilderConfig(
             Path(source), Path(out), "spells.sqlite"
         ))
+        db_builder.clean_up_out_folder()
         db_builder.build()
         db_builder.package_release()
 

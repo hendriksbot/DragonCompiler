@@ -48,6 +48,13 @@ class Builder():
         con.commit()
         con.close()
 
+    def clean_up_out_folder(self):
+
+        if self._config.output_path.is_dir():
+            (self._config.output_path / self._config.db_name).unlink(
+                missing_ok=True)
+            (self._config.output_path / "manifest.json").unlink(missing_ok=True)
+
     def package_release(self):
         manifest_path = self._config.output_path / "manifest.json"
         with open(manifest_path, "w", encoding="utf-8") as f:
