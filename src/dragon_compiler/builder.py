@@ -53,7 +53,8 @@ class Builder():
         cursor.execute("CREATE TABLE spells (" \
             "id INTEGER, "
             "name TEXT, " \
-            "level INTEGER" \
+            "level INTEGER, " \
+            "rest TEXT"
             ")")
 
         for idx, file in enumerate(source_folder.glob("*.json")):
@@ -61,10 +62,11 @@ class Builder():
             with file.open() as f:
                 json_file = json.load(f)
 
-            cursor.execute("INSERT INTO spells VALUES(?, ?, ?)", (
+            cursor.execute("INSERT INTO spells VALUES(?, ?, ?, ?)", (
                 idx,
                 json_file.get("name"),
-                json_file.get("level")
+                json_file.get("level"),
+                json.dumps(json_file)
             ))
             self.logger.info("added spell: %s", json_file.get("name"))
 

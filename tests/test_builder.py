@@ -35,6 +35,11 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
+    def get_table_creation_call(self):
+        return call("CREATE TABLE spells (" \
+            "id INTEGER, name TEXT, level INTEGER, rest TEXT)")
+
+
 class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
     """test build functionality"""
 
@@ -60,9 +65,9 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
-            call("CREATE TABLE spells (id INTEGER, name TEXT, level INTEGER)"),
-            call("INSERT INTO spells VALUES(?, ?, ?)", (
-                0, "Magic Missile", 1
+            self.get_table_creation_call(),
+            call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
+                0, "Magic Missile", 1, json.dumps(self.spell_data)
             ))
         ]
         )
@@ -102,9 +107,9 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
-            call("CREATE TABLE spells (id INTEGER, name TEXT, level INTEGER)"),
-            call("INSERT INTO spells VALUES(?, ?, ?)", (
-                0, "Magic Missile", 1
+            self.get_table_creation_call(),
+            call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
+                0, "Magic Missile", 1, json.dumps(self.spell_data)
             ))
         ]
         )
