@@ -23,7 +23,8 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
             "casting_time": {"unit": "action", "value": 1, "ritual": False},
             "range": {"type": "point", "distance": 120, "unit": "feet"},
             "description": {
-                "text": "You create three glowing darts...",
+                "text": "You create three glowing darts...äh, wer weiß wie " + \
+                    "es weiter geht?",
                 "at_higher_levels": ""},
         }
 
@@ -67,7 +68,8 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_cursor.execute.assert_has_calls([
             self.get_table_creation_call(),
             call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
-                0, "Magic Missile", 1, json.dumps(self.spell_data)
+                0, "Magic Missile", 1, json.dumps(self.spell_data,
+                                                   ensure_ascii=False)
             ))
         ]
         )
@@ -109,7 +111,8 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_cursor.execute.assert_has_calls([
             self.get_table_creation_call(),
             call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
-                0, "Magic Missile", 1, json.dumps(self.spell_data)
+                0, "Magic Missile", 1, json.dumps(self.spell_data,
+                                                   ensure_ascii=False)
             ))
         ]
         )

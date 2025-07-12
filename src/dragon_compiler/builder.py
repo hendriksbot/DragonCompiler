@@ -59,14 +59,14 @@ class Builder():
 
         for idx, file in enumerate(source_folder.glob("*.json")):
             self.logger.info("read file: %s", file)
-            with file.open() as f:
+            with file.open("r", encoding="utf-8") as f:
                 json_file = json.load(f)
 
             cursor.execute("INSERT INTO spells VALUES(?, ?, ?, ?)", (
                 idx,
                 json_file.get("name"),
                 json_file.get("level"),
-                json.dumps(json_file)
+                json.dumps(json_file, ensure_ascii=False)
             ))
             self.logger.info("added spell: %s", json_file.get("name"))
 
