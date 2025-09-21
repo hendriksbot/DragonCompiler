@@ -36,9 +36,11 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def get_table_creation_call(self):
+    def get_table_creation_call(self, addtional_columns: str=""):
+        if addtional_columns:
+            addtional_columns += ", "
         return call("CREATE TABLE spells (" \
-            "id INTEGER, name TEXT, level INTEGER, rest TEXT)")
+            f"id INTEGER, {addtional_columns}rest TEXT)")
 
 
 class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
@@ -67,10 +69,9 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
             self.get_table_creation_call(),
-            call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
-                0, "Magic Missile", 1, json.dumps(self.spell_data,
-                                                   ensure_ascii=False)
-            ))
+            call("INSERT INTO spells VALUES(?, ?)",
+                (0, json.dumps(self.spell_data,ensure_ascii=False))
+            )
         ]
         )
 
@@ -92,7 +93,17 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
             "datasets":[
                 {
                     "name": "spells",
-                    "source": ""
+                    "source": "",
+                    "columns": [
+                        {
+                            "name": "name",
+                            "type": "TEXT"
+                        },
+                        {
+                            "name": "level",
+                            "type": "INTEGER"
+                        }
+                    ]
                 }
             ]
         }
@@ -109,7 +120,7 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
         mock_cursor.execute.assert_has_calls([
-            self.get_table_creation_call(),
+            self.get_table_creation_call("name TEXT, level INTEGER"),
             call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
                 0, "Magic Missile", 1, json.dumps(self.spell_data,
                                                    ensure_ascii=False)
@@ -135,7 +146,21 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
             "datasets":[
                 {
                     "name": "spells",
-                    "source": "db/spells"
+                    "source": "db/spells",
+                    "columns": [
+                        {
+                            "name": "id",
+                            "type": "INTEGER"
+                        },
+                        {
+                            "name": "name",
+                            "type": "TEXT"
+                        },
+                        {
+                            "name": "level",
+                            "type": "INTEGER"
+                        }
+                    ]
                 }
             ]
         }
