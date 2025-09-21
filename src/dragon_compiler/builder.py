@@ -95,11 +95,14 @@ class Builder():
         con = sqlite3.connect(db_path)
         cursor = con.cursor()
 
+        self.logger.info("create sqlite table with the following columns:")
+        self.logger.info(f"-> {db_build_config.get_table_creation_str()}\n")
+
         cursor.execute("CREATE TABLE " + \
                        db_build_config.get_table_creation_str())
 
         for idx, file in enumerate(source_folder.glob("*.json")):
-            self.logger.info("read file: %s", file)
+            self.logger.info(f"read file: {file}")
             with file.open("r", encoding="utf-8") as f:
                 json_file = json.load(f)
 
@@ -111,7 +114,7 @@ class Builder():
             cursor.execute(
                 f"INSERT INTO {db_build_config.get_table_insert_str()}",
                 row_data)
-            self.logger.info("added spell: %s", json_file.get("name"))
+            self.logger.info(f"added spell: {json_file.get('name')}")
 
         con.commit()
         con.close()
