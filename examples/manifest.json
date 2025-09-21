@@ -6,7 +6,17 @@
     "datasets": [
         {
             "name": "spells",
-            "source": "spells"
+            "source": "spells",
+            "columns": [
+                {
+                    "name": "name",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "level",
+                    "type": "INTEGER"
+                }
+            ]
         }
     ]
 

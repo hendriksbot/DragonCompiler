@@ -13,16 +13,58 @@ class BuilderConfig:
     db_name: str
     db_manifest: dict = field(default_factory=dict)
 
+@dataclass
+class DatabaseBuildConfig:
+    """
+        This class contains build config for each database mentioned in the
+        manifest.
+    """
+    name: str
+    num_columns: int
+    additional_column_names: list[str]
+    table_config: str
+
+    def __post_init__(self):
+        self.table_config = f"id INTEGER, {self.table_config}rest TEXT"
+        self.num_columns += 2
+        param_str = "?, " * self.num_columns
+        self._table_insert_str = f"{self.name} VALUES({param_str[:-2]})"
+
+    def get_table_creation_str(self) -> str:
+        return f"{self.name} ({self.table_config})"
+
+    def get_table_insert_str(self) -> str:
+        return self._table_insert_str
+
 class Builder():
     """This class builds the database"""
     def __init__(self, logger: logging.Logger):
         self._config = None
         self.logger = logger
+        self._db_build_configs = []
+
 
     def set_config(self, config: BuilderConfig):
         self._config = config
         self.logger.info("source path is %s", self._config.source_folder)
         self.logger.info("output path is %s", self._config.output_path)
+        if self._config.db_manifest:
+            db_info = self._config.db_manifest["datasets"][0]
+            column_config_str, names = self._extract_column_config(db_info)
+            self._db_build_configs.append(
+                DatabaseBuildConfig(db_info["name"], len(db_info["columns"]),
+                                    names, column_config_str))
+        else:
+            self._db_build_configs.append(
+                DatabaseBuildConfig(self._config.db_name, 0, [], ""))
+
+    def _extract_column_config(self, db_info: dict) -> tuple[str, list[str]]:
+        column_config_str = ""
+        column_names = []
+        for c in db_info["columns"]:
+            column_config_str += f"{c['name']} {c['type']}, "
+            column_names.append(c["name"])
+        return column_config_str, column_names
 
     def load_db_manifest(self):
         with self._config.source_folder.open("r", encoding="utf-8") as f:
@@ -38,36 +80,37 @@ class Builder():
             db_path = self._config.output_path / db_file
             source_folder = self._config.source_folder / \
                 self._config.db_manifest["datasets"][0]["source"]
-            self._build_dataset(db_path, source_folder)
+            self._build_dataset(db_path, source_folder,
+                                 self._db_build_configs[0])
         else:
             db_file = self._config.db_name + ".sqlite"
             db_path = self._config.output_path / db_file
-            self._build_dataset(db_path, self._config.source_folder)
+            self._build_dataset(db_path, self._config.source_folder,
+                                self._db_build_configs[0])
 
         self.logger.info("build process complete\n")
 
-    def _build_dataset(self, db_path: Path, source_folder: Path):
+    def _build_dataset(self, db_path: Path, source_folder: Path,
+                        db_build_config: DatabaseBuildConfig):
         con = sqlite3.connect(db_path)
         cursor = con.cursor()
 
-        cursor.execute("CREATE TABLE spells (" \
-            "id INTEGER, "
-            "name TEXT, " \
-            "level INTEGER, " \
-            "rest TEXT"
-            ")")
+        cursor.execute("CREATE TABLE " + \
+                       db_build_config.get_table_creation_str())
 
         for idx, file in enumerate(source_folder.glob("*.json")):
             self.logger.info("read file: %s", file)
             with file.open("r", encoding="utf-8") as f:
                 json_file = json.load(f)
 
-            cursor.execute("INSERT INTO spells VALUES(?, ?, ?, ?)", (
-                idx,
-                json_file.get("name"),
-                json_file.get("level"),
-                json.dumps(json_file, ensure_ascii=False)
-            ))
+            row_data = (idx,)
+            for col_name in db_build_config.additional_column_names:
+                row_data += (json_file.get(col_name),)
+            row_data += (json.dumps(json_file, ensure_ascii=False),)
+
+            cursor.execute(
+                f"INSERT INTO {db_build_config.get_table_insert_str()}",
+                row_data)
             self.logger.info("added spell: %s", json_file.get("name"))
 
         con.commit()

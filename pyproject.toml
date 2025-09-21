@@ -1,6 +1,6 @@
 [project]
 name = "dragon-compiler"
-version = "0.1.1"
+version = "1.0.0"
 description = "A CLI tool that compiles DnD json data into a SQLITE database"
 readme = "README.md"
 license = { text = "MIT" }
