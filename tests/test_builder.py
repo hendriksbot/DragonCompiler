@@ -2,7 +2,6 @@
 import unittest
 from unittest.mock import patch, call, MagicMock, mock_open, ANY
 import json
-import os
 import tempfile
 from importlib.metadata import version
 from pathlib import Path
@@ -13,8 +12,10 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     """test builder with mocked database"""
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory() # pylint: disable=consider-using-with
-        self.spell_json_path = os.path.join(self.temp_dir.name,
-                                             "magic_missile.json")
+        self.db_dir = Path(self.temp_dir.name)
+        self.spell_dir = self.db_dir / "spells"
+        self.spell_dir.mkdir(exist_ok=True)
+        self.spell_json_path = self.spell_dir / "magic_missile.json"
 
         self.spell_data = {
             "name": "Magic Missile",
@@ -28,7 +29,7 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
                 "at_higher_levels": ""},
         }
 
-        with open(self.spell_json_path, "w", encoding="utf-8") as f:
+        with self.spell_json_path.open("w", encoding="utf-8") as f:
             json.dump(self.spell_data, f)
 
         self.fake_logger = MagicMock()
@@ -41,6 +42,30 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
             addtional_columns += ", "
         return call("CREATE TABLE spells (" \
             f"id INTEGER, {addtional_columns}rest TEXT)")
+
+    def get_db_manifest_for_DnDCombatTracker(self) -> dict: # pylint: disable=invalid-name
+        return {
+            "database_info": {
+                "name": "awesome data",
+                "version": "1.2.3"
+            },
+            "datasets": [
+                {
+                    "name": "spells",
+                    "source": "spells",
+                    "columns": [
+                        {
+                            "name": "name",
+                            "type": "TEXT"
+                        },
+                        {
+                            "name": "level",
+                            "type": "INTEGER"
+                        }
+                    ]
+                }
+            ]
+        }
 
 
 class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
@@ -58,7 +83,7 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
 
         test_builder = builder.Builder(logger=self.fake_logger)
         test_builder.set_config(builder.BuilderConfig(
-            Path(self.temp_dir.name),
+            self.spell_dir,
             mock_out_path,
             "spells"
             ))
@@ -89,24 +114,7 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        db_manifest = {
-            "datasets":[
-                {
-                    "name": "spells",
-                    "source": "",
-                    "columns": [
-                        {
-                            "name": "name",
-                            "type": "TEXT"
-                        },
-                        {
-                            "name": "level",
-                            "type": "INTEGER"
-                        }
-                    ]
-                }
-            ]
-        }
+        db_manifest = self.get_db_manifest_for_DnDCombatTracker()
 
         test_builder = builder.Builder(logger=self.fake_logger)
         test_builder.set_config(builder.BuilderConfig(
@@ -138,35 +146,10 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
     @patch("json.dump")
     @patch("builtins.open", new_callable=mock_open)
     def test_release(self, mock_file, mock_dump):
-        db_manifest = {
-            "database_info": {
-                "version": "1.2.3",
-                "name": "awesome data"
-            },
-            "datasets":[
-                {
-                    "name": "spells",
-                    "source": "db/spells",
-                    "columns": [
-                        {
-                            "name": "id",
-                            "type": "INTEGER"
-                        },
-                        {
-                            "name": "name",
-                            "type": "TEXT"
-                        },
-                        {
-                            "name": "level",
-                            "type": "INTEGER"
-                        }
-                    ]
-                }
-            ]
-        }
+        db_manifest = self.get_db_manifest_for_DnDCombatTracker()
         exp_manifest = {
             "compiler_info":{
-                "version": version("dragon_compiler")
+                "version": version("dragon-compiler")
             },
             "database_info": {
                 "version": "1.2.3",
@@ -178,7 +161,7 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
         test_builder = builder.Builder(logger=self.fake_logger)
         out_path = Path("release")
         test_builder.set_config(builder.BuilderConfig(
-            Path(self.temp_dir.name),
+            self.db_dir,
             out_path,
             None,
             db_manifest=db_manifest
