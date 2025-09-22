@@ -132,7 +132,7 @@ class Builder():
         manifest_path = self._config.output_path / "manifest.json"
         manifest = {
             "compiler_info":{
-                "version": version("dragon_compiler")
+                "version": version("dragon-compiler")
             },
             "database_info": self._config.db_manifest["database_info"]
         }
