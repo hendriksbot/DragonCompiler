@@ -4,6 +4,7 @@ from unittest.mock import patch, call, MagicMock, mock_open, ANY
 import json
 import tempfile
 from importlib.metadata import version
+from datetime import datetime, timezone
 from pathlib import Path
 from dragon_compiler import builder  # your actual import
 
@@ -148,6 +149,9 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
     @patch("builtins.open", new_callable=mock_open)
     def test_release(self, mock_file, mock_dump):
         db_manifest = self.get_db_manifest_for_DnDCombatTracker()
+        time_now = datetime.now(timezone.utc)
+        build_time = time_now.replace(microsecond=0).isoformat() \
+            .replace("+00:00", "Z")
         exp_manifest = {
             "compiler_info":{
                 "version": version("dragon-compiler")
@@ -177,8 +181,8 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
                         }
                     ]
                 }
-            }
-            #"build_time": ""
+            },
+            "build_time": build_time
         }
 
         test_builder = builder.Builder(logger=self.fake_logger)
@@ -190,7 +194,7 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
             db_manifest=db_manifest
             ))
 
-        test_builder.package_release()
+        test_builder.package_release(time_now)
 
         mock_file.assert_called_once_with(out_path / "manifest.json",
                                            "w", encoding="utf-8")

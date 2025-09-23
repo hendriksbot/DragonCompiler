@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 from dragon_compiler import builder
+import datetime as dt
 
 class CompilerCLI:
     """this is the command line interface class for the compiler"""
@@ -70,7 +71,7 @@ class CompilerCLI:
         ))
         db_builder.clean_up_out_folder()
         db_builder.build()
-        db_builder.package_release()
+        db_builder.package_release(dt.datetime.now(dt.timezone.utc))
 
     def load_db_manifest(self, source_path: Path) -> dict:
         self.logger.info("load database manifest")
