@@ -20,14 +20,16 @@ class DatabaseBuildConfig:
         manifest.
     """
     name: str
-    num_columns: int
-    additional_column_names: list[str]
-    table_config: str
+    column_config: list[dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self):
-        self.table_config = f"id INTEGER, {self.table_config}rest TEXT"
-        self.num_columns += 2
-        param_str = "?, " * self.num_columns
+        self.column_config.insert(0, {"name": "id", "type": "INTEGER"})
+        self.column_config.append({"name": "rest", "type": "TEXT"})
+        self.table_config = ""
+        for c in self.column_config:
+            self.table_config += f"{c['name']} {c['type']}, "
+        self.table_config = self.table_config[:-2]
+        param_str = "?, " * len(self.column_config)
         self._table_insert_str = f"{self.name} VALUES({param_str[:-2]})"
 
     def get_table_creation_str(self) -> str:
@@ -35,6 +37,9 @@ class DatabaseBuildConfig:
 
     def get_table_insert_str(self) -> str:
         return self._table_insert_str
+
+    def get_column_names(self) -> list[str]:
+        return [c["name"] for c in self.column_config]
 
 class Builder():
     """This class builds the database"""
@@ -50,21 +55,11 @@ class Builder():
         self.logger.info("output path is %s", self._config.output_path)
         if self._config.db_manifest:
             db_info = self._config.db_manifest["datasets"][0]
-            column_config_str, names = self._extract_column_config(db_info)
             self._db_build_configs.append(
-                DatabaseBuildConfig(db_info["name"], len(db_info["columns"]),
-                                    names, column_config_str))
+                DatabaseBuildConfig(db_info["name"], db_info["columns"].copy()))
         else:
             self._db_build_configs.append(
-                DatabaseBuildConfig(self._config.db_name, 0, [], ""))
-
-    def _extract_column_config(self, db_info: dict) -> tuple[str, list[str]]:
-        column_config_str = ""
-        column_names = []
-        for c in db_info["columns"]:
-            column_config_str += f"{c['name']} {c['type']}, "
-            column_names.append(c["name"])
-        return column_config_str, column_names
+                DatabaseBuildConfig(self._config.db_name))
 
     def load_db_manifest(self):
         with self._config.source_folder.open("r", encoding="utf-8") as f:
@@ -107,7 +102,7 @@ class Builder():
                 json_file = json.load(f)
 
             row_data = (idx,)
-            for col_name in db_build_config.additional_column_names:
+            for col_name in db_build_config.get_column_names()[1:-1]:
                 row_data += (json_file.get(col_name),)
             row_data += (json.dumps(json_file, ensure_ascii=False),)
 
@@ -134,7 +129,12 @@ class Builder():
             "compiler_info":{
                 "version": version("dragon-compiler")
             },
-            "database_info": self._config.db_manifest["database_info"]
+            "database_info": self._config.db_manifest["database_info"],
+            "datasets": {
+                self._db_build_configs[0].name: {
+                    "columns": self._db_build_configs[0].column_config
+                }
+            }
         }
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
