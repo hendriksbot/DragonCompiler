@@ -11,6 +11,7 @@ from dragon_compiler import builder  # your actual import
 class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     """test builder with mocked database"""
     def setUp(self):
+        self.maxDiff = None # pylint: disable=invalid-name
         self.temp_dir = tempfile.TemporaryDirectory() # pylint: disable=consider-using-with
         self.db_dir = Path(self.temp_dir.name)
         self.spell_dir = self.db_dir / "spells"
@@ -154,6 +155,28 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
             "database_info": {
                 "version": "1.2.3",
                 "name": "awesome data"
+            },
+            "datasets": {
+                "spells": {
+                    "columns": [
+                        {
+                            "name": "id",
+                            "type": "INTEGER"
+                        },
+                        {
+                            "name": "name",
+                            "type": "TEXT"
+                        },
+                        {
+                            "name": "level",
+                            "type": "INTEGER"
+                        },
+                        {
+                            "name": "rest",
+                            "type": "TEXT"
+                        }
+                    ]
+                }
             }
             #"build_time": ""
         }
@@ -171,5 +194,9 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
 
         mock_file.assert_called_once_with(out_path / "manifest.json",
                                            "w", encoding="utf-8")
+
+        act_manifest = mock_dump.call_args[0][0]
+
+        self.assertDictEqual(act_manifest, exp_manifest)
 
         mock_dump.assert_called_once_with(exp_manifest, ANY, indent=2)
