@@ -5,6 +5,7 @@ import json
 import logging
 from importlib.metadata import version
 from pathlib import Path
+import datetime
 
 @dataclass
 class BuilderConfig:
@@ -122,7 +123,7 @@ class Builder():
                 file.unlink()
             (self._config.output_path / "manifest.json").unlink(missing_ok=True)
 
-    def package_release(self):
+    def package_release(self, date_time_now: datetime.datetime):
         self.logger.info("start to create release package")
         manifest_path = self._config.output_path / "manifest.json"
         manifest = {
@@ -134,7 +135,9 @@ class Builder():
                 self._db_build_configs[0].name: {
                     "columns": self._db_build_configs[0].column_config
                 }
-            }
+            },
+            "build_time": date_time_now.replace(microsecond=0).isoformat() \
+                            .replace("+00:00", "Z")
         }
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
