@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -8,13 +8,12 @@ repos:
       - id: check-json
       - id: check-added-large-files
       - id: check-toml
-  - repo: local
+  - repo: https://github.com/pycqa/pylint
+    rev: v4.0.2
     hooks:
       - id: pylint
-        name: pylint
-        entry: pylint
-        language: python  # Use the system or virtualenv Python environment
-        types: [python]
-        args: [--rcfile=.pylintrc]
-        additional_dependencies:
-          - pylint==3.3.7
+        args:
+          [
+            "--rcfile=.pylintrc",
+            "--ignore-paths=^tests/.*$",
+          ]
