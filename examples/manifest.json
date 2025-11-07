@@ -17,6 +17,16 @@
                     "type": "INTEGER"
                 }
             ]
+        },
+        {
+            "name": "monsters",
+            "source": "monsters",
+            "columns": [
+                {
+                    "name": "name",
+                    "type": "TEXT"
+                }
+            ]
         }
     ]
 
