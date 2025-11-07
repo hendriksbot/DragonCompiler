@@ -7,7 +7,7 @@ This repository compiles Dungeons & Dragons data from individual json files into
 
 ## Set-up
 
-1. Install python 3.11.2 or higher
+1. Install python 3.14 or higher
 
 2. Create a virtual environtment
     ```
