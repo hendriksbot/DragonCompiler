@@ -1,16 +1,16 @@
 [project]
 name = "dragon-compiler"
-version = "1.0.0"
+version = "1.0.1"
 description = "A CLI tool that compiles DnD json data into a SQLITE database"
 readme = "README.md"
 license = { text = "MIT" }
+requires-python = ">= 3.14"
 dependencies = [
-    "typer==0.16.0"
+    "typer==0.20.0"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pylint==3.3.7",
     "pre-commit>=4.0.0,<5.0.0",
     "build>=1.2.2"
 ]
