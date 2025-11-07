@@ -86,7 +86,12 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
                         {"name": "name", "type": "TEXT"},
                         {"name": "level", "type": "INTEGER"},
                     ],
-                }
+                },
+                {
+                    "name": "monsters",
+                    "source": "monsters",
+                    "columns": [{"name": "name", "type": "TEXT"}],
+                },
             ],
         }
 
@@ -167,12 +172,14 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
     @patch("dragon_compiler.builder.sqlite3.connect")
     def test_build_with_db_manifest(self, mock_connect):
         # Create a mock connection and cursor
-        mock_conn = MagicMock()
+        mock_conn_spell = MagicMock()
+        mock_conn_monster = MagicMock()
         mock_cursor = MagicMock()
         mock_out_path = MagicMock()
         mock_out_path.return_value = Path("build")
-        mock_connect.return_value = mock_conn
-        mock_conn.cursor.return_value = mock_cursor
+        mock_connect.side_effect = [mock_conn_spell, mock_conn_monster]
+        mock_conn_spell.cursor.return_value = mock_cursor
+        mock_conn_monster.cursor.return_value = mock_cursor
 
         db_manifest = self.get_db_manifest_for_DnDCombatTracker()
 
@@ -189,8 +196,10 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         test_builder.build()
 
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
-        mock_connect.assert_called_once()
-        mock_cursor.execute.assert_has_calls(
+        self.assertEqual(2, mock_connect.call_count)
+
+        self.assertListEqual(
+            mock_cursor.execute.mock_calls,
             [
                 self.get_table_creation_call(
                     "spells", "name TEXT, level INTEGER"
@@ -204,12 +213,23 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
                         json.dumps(self.data["spells"], ensure_ascii=False),
                     ),
                 ),
-            ]
+                self.get_table_creation_call("monsters", "name TEXT"),
+                call(
+                    "INSERT INTO monsters VALUES(?, ?, ?)",
+                    (
+                        0,
+                        "Owlbear",
+                        json.dumps(self.data["monsters"], ensure_ascii=False),
+                    ),
+                ),
+            ],
         )
 
         # Assert commit and close are called
-        mock_conn.commit.assert_called_once()
-        mock_conn.close.assert_called_once()
+        mock_conn_spell.commit.assert_called_once()
+        mock_conn_spell.close.assert_called_once()
+        mock_conn_monster.commit.assert_called_once()
+        mock_conn_monster.close.assert_called_once()
 
 
 class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
@@ -234,7 +254,14 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
                         {"name": "level", "type": "INTEGER"},
                         {"name": "rest", "type": "TEXT"},
                     ]
-                }
+                },
+                "monsters": {
+                    "columns": [
+                        {"name": "id", "type": "INTEGER"},
+                        {"name": "name", "type": "TEXT"},
+                        {"name": "rest", "type": "TEXT"},
+                    ]
+                },
             },
             "build_time": build_time,
         }

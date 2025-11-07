@@ -50,6 +50,8 @@ class DatabaseBuildConfig:
 class Builder:
     """This class builds the database"""
 
+    _db_build_configs: list[DatabaseBuildConfig]
+
     def __init__(self, logger: logging.Logger):
         self._config = None
         self.logger = logger
@@ -60,10 +62,12 @@ class Builder:
         self.logger.info("source path is %s", self._config.source_folder)
         self.logger.info("output path is %s", self._config.output_path)
         if self._config.db_manifest:
-            db_info = self._config.db_manifest["datasets"][0]
-            self._db_build_configs.append(
-                DatabaseBuildConfig(db_info["name"], db_info["columns"].copy())
-            )
+            for db_info in self._config.db_manifest["datasets"]:
+                self._db_build_configs.append(
+                    DatabaseBuildConfig(
+                        db_info["name"], db_info["columns"].copy()
+                    )
+                )
         else:
             self._db_build_configs.append(
                 DatabaseBuildConfig(self._config.db_name)
@@ -73,22 +77,22 @@ class Builder:
         with self._config.source_folder.open("r", encoding="utf-8") as f:
             self.db_manifest = json.load(f)
 
+    def _is_build_with_manifest(self) -> bool:
+        return self._config.db_name is None
+
     def build(self):
         self.logger.info("start build process\n")
         self._config.output_path.mkdir(parents=True, exist_ok=True)
 
-        if self._config.db_name is None:
-            db_file = (
-                self._config.db_manifest["datasets"][0]["name"] + ".sqlite"
-            )
-            db_path = self._config.output_path / db_file
-            source_folder = (
-                self._config.source_folder
-                / self._config.db_manifest["datasets"][0]["source"]
-            )
-            self._build_dataset(
-                db_path, source_folder, self._db_build_configs[0]
-            )
+        if self._is_build_with_manifest():
+            for idx, db_build_config in enumerate(self._db_build_configs):
+                db_file = db_build_config.name + ".sqlite"
+                db_path = self._config.output_path / db_file
+                source_folder = (
+                    self._config.source_folder
+                    / self._config.db_manifest["datasets"][idx]["source"]
+                )
+                self._build_dataset(db_path, source_folder, db_build_config)
         else:
             db_file = self._config.db_name + ".sqlite"
             db_path = self._config.output_path / db_file
@@ -147,9 +151,8 @@ class Builder:
             "compiler_info": {"version": version("dragon-compiler")},
             "database_info": self._config.db_manifest["database_info"],
             "datasets": {
-                self._db_build_configs[0].name: {
-                    "columns": self._db_build_configs[0].column_config
-                }
+                db_build_config.name: {"columns": db_build_config.column_config}
+                for db_build_config in self._db_build_configs
             },
             "build_time": date_time_now.replace(microsecond=0)
             .isoformat()
