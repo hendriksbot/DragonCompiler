@@ -1,4 +1,5 @@
 """Tests for dragon builder"""
+
 import unittest
 from unittest.mock import patch, call, MagicMock, mock_open, ANY
 import json
@@ -11,9 +12,12 @@ from dragon_compiler import builder  # your actual import
 
 class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     """test builder with mocked database"""
+
     def setUp(self):
-        self.maxDiff = None # pylint: disable=invalid-name
-        self.temp_dir = tempfile.TemporaryDirectory() # pylint: disable=consider-using-with
+        self.maxDiff = None  # pylint: disable=invalid-name
+        self.temp_dir = (
+            tempfile.TemporaryDirectory()
+        )  # pylint: disable=consider-using-with
         self.db_dir = Path(self.temp_dir.name)
         self.spell_dir = self.db_dir / "spells"
         self.spell_dir.mkdir(exist_ok=True)
@@ -26,9 +30,10 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
             "casting_time": {"unit": "action", "value": 1, "ritual": False},
             "range": {"type": "point", "distance": 120, "unit": "feet"},
             "description": {
-                "text": "You create three glowing darts...äh, wer weiß wie " + \
-                    "es weiter geht?",
-                "at_higher_levels": ""},
+                "text": "You create three glowing darts...äh, wer weiß wie "
+                + "es weiter geht?",
+                "at_higher_levels": "",
+            },
         }
 
         with self.spell_json_path.open("w", encoding="utf-8") as f:
@@ -39,34 +44,28 @@ class TestSQLiteBuilderWithMockDB(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def get_table_creation_call(self, addtional_columns: str=""):
+    def get_table_creation_call(self, addtional_columns: str = ""):
         if addtional_columns:
             addtional_columns += ", "
-        return call("CREATE TABLE spells (" \
-            f"id INTEGER, {addtional_columns}rest TEXT)")
+        return call(
+            "CREATE TABLE spells (" f"id INTEGER, {addtional_columns}rest TEXT)"
+        )
 
-    def get_db_manifest_for_DnDCombatTracker(self) -> dict: # pylint: disable=invalid-name
+    def get_db_manifest_for_DnDCombatTracker(
+        self,
+    ) -> dict:  # pylint: disable=invalid-name
         return {
-            "database_info": {
-                "name": "awesome data",
-                "version": "1.2.3"
-            },
+            "database_info": {"name": "awesome data", "version": "1.2.3"},
             "datasets": [
                 {
                     "name": "spells",
                     "source": "spells",
                     "columns": [
-                        {
-                            "name": "name",
-                            "type": "TEXT"
-                        },
-                        {
-                            "name": "level",
-                            "type": "INTEGER"
-                        }
-                    ]
+                        {"name": "name", "type": "TEXT"},
+                        {"name": "level", "type": "INTEGER"},
+                    ],
                 }
-            ]
+            ],
         }
 
 
@@ -84,22 +83,22 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         mock_conn.cursor.return_value = mock_cursor
 
         test_builder = builder.Builder(logger=self.fake_logger)
-        test_builder.set_config(builder.BuilderConfig(
-            self.spell_dir,
-            mock_out_path,
-            "spells"
-            ))
+        test_builder.set_config(
+            builder.BuilderConfig(self.spell_dir, mock_out_path, "spells")
+        )
 
         test_builder.build()
 
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
-        mock_cursor.execute.assert_has_calls([
-            self.get_table_creation_call(),
-            call("INSERT INTO spells VALUES(?, ?)",
-                (0, json.dumps(self.spell_data,ensure_ascii=False))
-            )
-        ]
+        mock_cursor.execute.assert_has_calls(
+            [
+                self.get_table_creation_call(),
+                call(
+                    "INSERT INTO spells VALUES(?, ?)",
+                    (0, json.dumps(self.spell_data, ensure_ascii=False)),
+                ),
+            ]
         )
 
         # Assert commit and close are called
@@ -119,28 +118,38 @@ class TestBuilderBuild(TestSQLiteBuilderWithMockDB):
         db_manifest = self.get_db_manifest_for_DnDCombatTracker()
 
         test_builder = builder.Builder(logger=self.fake_logger)
-        test_builder.set_config(builder.BuilderConfig(
-            Path(self.temp_dir.name),
-            mock_out_path,
-            None, db_manifest=db_manifest
-            ))
+        test_builder.set_config(
+            builder.BuilderConfig(
+                Path(self.temp_dir.name),
+                mock_out_path,
+                None,
+                db_manifest=db_manifest,
+            )
+        )
 
         test_builder.build()
 
         mock_out_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_connect.assert_called_once()
-        mock_cursor.execute.assert_has_calls([
-            self.get_table_creation_call("name TEXT, level INTEGER"),
-            call("INSERT INTO spells VALUES(?, ?, ?, ?)", (
-                0, "Magic Missile", 1, json.dumps(self.spell_data,
-                                                   ensure_ascii=False)
-            ))
-        ]
+        mock_cursor.execute.assert_has_calls(
+            [
+                self.get_table_creation_call("name TEXT, level INTEGER"),
+                call(
+                    "INSERT INTO spells VALUES(?, ?, ?, ?)",
+                    (
+                        0,
+                        "Magic Missile",
+                        1,
+                        json.dumps(self.spell_data, ensure_ascii=False),
+                    ),
+                ),
+            ]
         )
 
         # Assert commit and close are called
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
+
 
 class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
     """test release functionality"""
@@ -150,54 +159,38 @@ class TestBuilderRelease(TestSQLiteBuilderWithMockDB):
     def test_release(self, mock_file, mock_dump):
         db_manifest = self.get_db_manifest_for_DnDCombatTracker()
         time_now = datetime.now(timezone.utc)
-        build_time = time_now.replace(microsecond=0).isoformat() \
-            .replace("+00:00", "Z")
+        build_time = (
+            time_now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        )
         exp_manifest = {
-            "compiler_info":{
-                "version": version("dragon-compiler")
-            },
-            "database_info": {
-                "version": "1.2.3",
-                "name": "awesome data"
-            },
+            "compiler_info": {"version": version("dragon-compiler")},
+            "database_info": {"version": "1.2.3", "name": "awesome data"},
             "datasets": {
                 "spells": {
                     "columns": [
-                        {
-                            "name": "id",
-                            "type": "INTEGER"
-                        },
-                        {
-                            "name": "name",
-                            "type": "TEXT"
-                        },
-                        {
-                            "name": "level",
-                            "type": "INTEGER"
-                        },
-                        {
-                            "name": "rest",
-                            "type": "TEXT"
-                        }
+                        {"name": "id", "type": "INTEGER"},
+                        {"name": "name", "type": "TEXT"},
+                        {"name": "level", "type": "INTEGER"},
+                        {"name": "rest", "type": "TEXT"},
                     ]
                 }
             },
-            "build_time": build_time
+            "build_time": build_time,
         }
 
         test_builder = builder.Builder(logger=self.fake_logger)
         out_path = Path("release")
-        test_builder.set_config(builder.BuilderConfig(
-            self.db_dir,
-            out_path,
-            None,
-            db_manifest=db_manifest
-            ))
+        test_builder.set_config(
+            builder.BuilderConfig(
+                self.db_dir, out_path, None, db_manifest=db_manifest
+            )
+        )
 
         test_builder.package_release(time_now)
 
-        mock_file.assert_called_once_with(out_path / "manifest.json",
-                                           "w", encoding="utf-8")
+        mock_file.assert_called_once_with(
+            out_path / "manifest.json", "w", encoding="utf-8"
+        )
 
         act_manifest = mock_dump.call_args[0][0]
 
