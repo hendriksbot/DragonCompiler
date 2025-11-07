@@ -128,7 +128,7 @@ class Builder:
                 f"INSERT INTO {db_build_config.get_table_insert_str()}",
                 row_data,
             )
-            self.logger.info(f"added spell: {json_file.get("name")}")
+            self.logger.info(f"added entry: {json_file.get("name")}")
 
         con.commit()
         con.close()
